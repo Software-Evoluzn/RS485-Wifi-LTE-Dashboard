@@ -12,7 +12,7 @@ import requests
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-app = Flask(__name__, template_folder="template")
+app = Flask(__name__)
 app.secret_key = "evoluzn_secret_key_2024"
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
@@ -21,11 +21,28 @@ DB_PATH = "sensor_data.db"
 
 BROKER = "evoluzn.org"
 PORT   = 18889
+#BROKER   = "broker.emqx.io"
+#PORT     = 1883
 USERNAME = "evzin_led"
 PASSWORD = "63I9YhMaXpa49Eb"
 
 # ── Global: stores the URL entered in Configure API modal ──
 configured_url = {"url": ""}
+
+def load_configured_url():
+    """Load previously saved URL from DB into memory on startup."""
+    try:
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT url FROM configured_urls ORDER BY id DESC LIMIT 1")
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if row:
+            configured_url["url"] = row["url"]
+            print(f"✅ Loaded configured URL from DB: {configured_url['url']}")
+    except Exception as e:
+        print(f"⚠️ Could not load configured URL: {e}")
 
 
 def connect_db():
@@ -60,6 +77,14 @@ def create_tables():
             voltage INTEGER DEFAULT 0,
             current INTEGER DEFAULT 0,
             power INTEGER DEFAULT 0
+        );
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS configured_urls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company TEXT,
+            url TEXT,
+            updated_at DATETIME DEFAULT (datetime('now','localtime'))
         );
     """)
     conn.commit()
@@ -300,8 +325,23 @@ def save_config():
     if "user_id" not in session:
         return jsonify({}), 401
     data = request.get_json()
-    configured_url["url"] = data.get("url", "").strip()
-    print(f"✅ Configured URL set to: {configured_url['url']}")
+    company = data.get("company", "").strip()
+    url = data.get("url", "").strip()
+    configured_url["url"] = url
+
+    conn = connect_db()
+    cursor = conn.cursor()
+    # Keep only the latest config (upsert pattern)
+    cursor.execute("DELETE FROM configured_urls")
+    cursor.execute(
+        "INSERT INTO configured_urls (company, url) VALUES (?, ?)",
+        (company, url)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print(f"✅ Configured URL saved to DB: {company} → {url}")
     return jsonify({"status": "success"})
 
 
@@ -448,5 +488,6 @@ def latest():
 
 if __name__ == "__main__":
     create_tables()
+    load_configured_url()   # ← loads saved URL from DB into memory
     mqtt_client = connect_mqtt()
     socketio.run(app, host="0.0.0.0", port=5001, debug=True)
