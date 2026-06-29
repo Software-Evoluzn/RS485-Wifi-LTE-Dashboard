@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Devices - Evoluzn</title>
+  <link rel="icon" type="image/png" href="../static/img/evoluzn_title_logo.png">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="../static/css/style.css">
+
+  <!-- Socket.IO client -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <style>
+    .evl-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .evl-modal {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 420px;
+      margin: 1rem;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    }
+
+    .evl-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .evl-modal-head h5 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .evl-modal-x {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      line-height: 1;
+      color: #607080;
+      cursor: pointer;
+    }
+
+    .evl-modal-body {
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .evl-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .evl-field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #607080;
+    }
+
+    .evl-field input {
+      border: 1px solid #dde3ea;
+      border-radius: 7px;
+      padding: 0.4rem 0.65rem;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .evl-field input:focus {
+      border-color: #1565c0;
+    }
+
+    .evl-modal-foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem 1rem;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-light evl-navbar">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <img src="../static/img/logo.png" alt="Evoluzn Logo" class="evl-logo">
+      </a>
+
+      <!-- Settings Dropdown -->
+      <div class="position-relative">
+        <button class="evl-settings-btn" id="btnSettings" title="Settings">
+          <i class="bi bi-gear"></i>
+          <span class="d-none d-sm-inline">Settings</span>
+        </button>
+
+        <div id="settingsDropdown" class="evl-account-dropdown d-none">
+          <a href="/profile" class="evl-account-item">
+            <i class="bi bi-person"></i> Profile
+          </a>
+          <a href="#" class="evl-account-item" id="btnConfigureAPI">
+            <i class="bi bi-key"></i> Configure API
+          </a>
+          <div class="evl-account-divider"></div>
+          <a href="/logout" class="evl-account-item evl-account-danger">
+            <i class="bi bi-box-arrow-right"></i> Log Out
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="evl-devices-wrap">
+    <h4 class="evl-devices-title">Select a Device</h4>
+    <p class="evl-devices-subtitle">Choose a gateway to view its live dashboard</p>
+
+    <div class="evl-devices-grid">
+      <a href="/dashboard?device=gateway_Wifi_2" class="evl-device-card" data-device="gateway_Wifi_2">
+        <span class="evl-status-dot offline"></span>
+        <div class="evl-device-icon"><i class="bi bi-wifi"></i></div>
+        <div class="evl-device-name">WiFi</div>
+        <div class="evl-device-sub">gateway_Wifi_2</div>
+      </a>
+
+      <a href="/dashboard?device=gateway_LTE_1" class="evl-device-card" data-device="gateway_LTE_1">
+        <span class="evl-status-dot offline"></span>
+        <div class="evl-device-icon"><i class="bi bi-broadcast"></i></div>
+        <div class="evl-device-name">LTE</div>
+        <div class="evl-device-sub">gateway_LTE_1</div>
+      </a>
+    </div>
+  </main>
+
+  <!-- Configure API Modal -->
+  <div class="evl-modal-overlay" id="evlConfigModal">
+    <div class="evl-modal">
+      <div class="evl-modal-head">
+        <h5><i class="bi bi-link-45deg me-1"></i> Configure URL to publish</h5>
+        <button class="evl-modal-x" id="btnModalClose">&times;</button>
+      </div>
+      <div class="evl-modal-body">
+        <div class="evl-field">
+          <label>Company Name</label>
+          <input type="text" id="cfgCompany" placeholder="e.g. Evoluzn" />
+        </div>
+        <div class="evl-field">
+          <label>URL</label>
+          <input type="text" id="cfgURL" placeholder="e.g. https://evoluzn.org/publish" />
+        </div>
+        <div id="cfgMsg" style="font-size: 0.82rem;"></div>
+      </div>
+      <div class="evl-modal-foot">
+        <button class="btn btn-sm btn-secondary" id="btnModalCancel">Cancel</button>
+        <button class="btn btn-sm" id="cfgSaveBtn" style="background:#1565c0;color:#fff;font-weight:500;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Settings dropdown ──────────────────────────────────────────
+    const btnSettings = document.getElementById("btnSettings");
+    const settingsDropdown = document.getElementById("settingsDropdown");
+
+    btnSettings.addEventListener("click", (e) => {
+      e.stopPropagation();
+      settingsDropdown.classList.toggle("d-none");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!settingsDropdown.contains(e.target) && !btnSettings.contains(e.target)) {
+        settingsDropdown.classList.add("d-none");
+      }
+    });
+
+    // ── Configure API Modal ────────────────────────────────────────
+    const modal = document.getElementById("evlConfigModal");
+
+    function openConfigModal() {
+      document.getElementById("cfgCompany").value = localStorage.getItem("cfg_company") || "";
+      document.getElementById("cfgURL").value = localStorage.getItem("cfg_url") || "";
+      document.getElementById("cfgMsg").textContent = "";
+      modal.style.display = "flex";
+      settingsDropdown.classList.add("d-none");
+    }
+
+    function closeConfigModal() {
+      modal.style.display = "none";
+    }
+
+    document.getElementById("btnConfigureAPI").addEventListener("click", (e) => {
+      e.preventDefault();
+      openConfigModal();
+    });
+
+    document.getElementById("btnModalClose").addEventListener("click", closeConfigModal);
+    document.getElementById("btnModalCancel").addEventListener("click", closeConfigModal);
+
+    // Close on overlay background click
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeConfigModal();
+    });
+
+    
+    // Save
+    document.getElementById("cfgSaveBtn").addEventListener("click", () => {
+      const company = document.getElementById("cfgCompany").value.trim();
+      const url = document.getElementById("cfgURL").value.trim();
+      const msg = document.getElementById("cfgMsg");
+
+      if (!company || !url) {
+        msg.style.color = "#dc3545";
+        msg.textContent = "Both fields are required.";
+        return;
+      }
+
+      // Save to localStorage (for display)
+      localStorage.setItem("cfg_company", company);
+      localStorage.setItem("cfg_url", url);
+
+      // ── Send URL to server so app.py can forward MQTT data ──
+      fetch("/save_config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ company, url })
+      })
+        .then(res => res.json())
+        .then(() => {
+          msg.style.color = "#2e7d32";
+          msg.textContent = "✅ Saved successfully!";
+          setTimeout(closeConfigModal, 1000);
+        })
+        .catch(() => {
+          msg.style.color = "#dc3545";
+          msg.textContent = "❌ Failed to save to server.";
+        });
+    });
+
+    // ── Constants ──────────────────────────────────────────────────
+    const OFFLINE_TIMEOUT_MS = 60 * 1000; // 1 min
+    const offlineTimers = {};
+
+    // ── Helpers ────────────────────────────────────────────────────
+    function setDeviceStatus(deviceId, isOnline) {
+      const card = document.querySelector(`.evl-device-card[data-device="${deviceId}"]`);
+      if (!card) return;
+      const dot = card.querySelector(".evl-status-dot");
+      dot.classList.toggle("online", isOnline);
+      dot.classList.toggle("offline", !isOnline);
+      localStorage.setItem(`device_online_${deviceId}`, isOnline ? "1" : "0");
+    }
+
+    function getLastSeen(deviceId) {
+      const val = localStorage.getItem(`last_seen_${deviceId}`);
+      return val ? parseInt(val, 10) : null;
+    }
+
+    function setLastSeen(deviceId) {
+      localStorage.setItem(`last_seen_${deviceId}`, Date.now().toString());
+    }
+
+    function scheduleOffline(deviceId) {
+      clearTimeout(offlineTimers[deviceId]);
+      const lastSeen = getLastSeen(deviceId);
+      if (!lastSeen) return;
+      const remaining = OFFLINE_TIMEOUT_MS - (Date.now() - lastSeen);
+      if (remaining <= 0) {
+        setDeviceStatus(deviceId, false);
+      } else {
+        offlineTimers[deviceId] = setTimeout(() => setDeviceStatus(deviceId, false), remaining);
+      }
+    }
+
+    function markOnline(deviceId) {
+      setLastSeen(deviceId);
+      setDeviceStatus(deviceId, true);
+      scheduleOffline(deviceId);
+    }
+
+    // ── On page load: restore status from localStorage ─────────────
+    const knownDevices = ["gateway_Wifi_2", "gateway_LTE_1"];
+    knownDevices.forEach((deviceId) => {
+      const lastSeen = getLastSeen(deviceId);
+      if (lastSeen && (Date.now() - lastSeen) < OFFLINE_TIMEOUT_MS) {
+        setDeviceStatus(deviceId, true);
+        scheduleOffline(deviceId);
+      } else {
+        setDeviceStatus(deviceId, false);
+      }
+    });
+
+    // ── Socket: live updates ───────────────────────────────────────
+    const socket = io();
+    socket.on("device_status", (data) => markOnline(data.device_id));
+  </script>
+</body>
+
+</html>

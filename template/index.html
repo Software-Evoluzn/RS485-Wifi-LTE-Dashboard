@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evoluzn Dashboard</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- Flatpickr date range picker -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <link rel="stylesheet" href="../static/css/style.css" />
+
+  <!-- Socket.IO client — add this near your other <script> tags in <head> -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-light evl-navbar">
+    <div class="container-fluid justify-content-center">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <img src="../static/img/logo.png" alt="Evoluzn Logo" class="evl-logo" />
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container-fluid" style="padding-left: 6%; padding-right: 6%; margin-top: 1rem">
+    <!-- Realtime Timestamp Card -->
+    <div class="row g-4 mb-3">
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="evl-card d-flex align-items-center gap-2" style="
+              padding: 0.6rem 1rem;
+              display: inline-flex;
+              width: fit-content;
+              background: linear-gradient(135deg, #eef2ff 0%, #f5f7ff 100%);
+              border-left: 3px solid #1565c0;
+            ">
+          <i class="bi bi-clock" style="font-size: 1.1rem; color: #607080"></i>
+          <div>
+            <div class="evl-card-label" style="margin-bottom: 2px; font-size: 0.75rem; line-height: 1.3">
+              Last Update
+            </div>
+            <div id="live_timestamp" style="
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  color: #1a1a2e;
+                  letter-spacing: 0.01em;
+                  line-height: 1.4;
+                ">
+              --:-- | -- --- ----
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RS485 Sensor Cards -->
+    <div class="row g-4 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="evl-card">
+          <div class="evl-card-label">RS485_1</div>
+          <div class="evl-card-value" id="rs485_1_value">--</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="evl-card">
+          <div class="evl-card-label">RS485_2</div>
+          <div class="evl-card-value" id="rs485_2_value">--</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="evl-card">
+          <div class="evl-card-label">RS232_1</div>
+          <div class="evl-card-value" id="rs232_1_value">--</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="evl-card">
+          <div class="evl-card-label">RS232_2</div>
+          <div class="evl-card-value" id="rs232_2_value">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph Section -->
+    <div class="evl-graph-section p-3 p-md-4">
+      <!-- Graph Header Row -->
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <h5 class="evl-graph-title mb-0">All Graph</h5>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <!-- Download Button -->
+          <div class="position-relative">
+            <button class="evl-btn" id="btnDownload" title="Download Excel" style="padding: 0.3rem 0.5rem">
+              <img src="../static/img/download.png" style="height: 20px; width: 20px; object-fit: contain" />
+            </button>
+            <div id="downloadDropdown" class="evl-dropdown d-none" style="min-width: 220px">
+              <p class="evl-filter-hint mb-2" style="font-weight: 600; color: #1a1a2e">
+                Download Excel
+              </p>
+              <button class="btn btn-sm w-100 mb-2" id="btnDownloadToday" style="
+                    background: #2e7d32;
+                    color: #fff;
+                    border-radius: 6px;
+                    font-weight: 500;
+                  ">
+                <i class="bi bi-calendar-check me-1"></i> Download Today's
+                Data
+              </button>
+              <div class="text-center mb-2" style="font-size: 0.75rem; color: #607080">
+                OR
+              </div>
+              <label style="font-size: 0.75rem; color: #607080; margin-bottom: 2px">Start Date</label>
+              <input type="date" id="dlStartDate" class="form-control form-control-sm mb-2" />
+              <label style="font-size: 0.75rem; color: #607080; margin-bottom: 2px">End Date</label>
+              <input type="date" id="dlEndDate" class="form-control form-control-sm mb-2" />
+              <button class="btn btn-sm w-100" id="btnDownloadByDate" style="
+                    background: #1565c0;
+                    color: #fff;
+                    border-radius: 6px;
+                    font-weight: 500;
+                  ">
+                <i class="bi bi-download me-1"></i> Download By Date
+              </button>
+            </div>
+          </div>
+
+          <!-- Set Date Button -->
+          <div class="position-relative">
+            <button class="evl-btn" id="btnSetDate" title="Set Date">
+              <i class="bi bi-calendar3 me-1"></i>
+              <span class="d-none d-sm-inline">Set Date</span>
+            </button>
+            <div id="setDateDropdown" class="evl-dropdown d-none" style="min-width: 180px">
+              <p class="evl-filter-hint mb-2" style="font-weight: 600; color: #1a1a2e">
+                Filter Graph
+              </p>
+              <button class="btn btn-sm w-100 mb-2" id="btnFilterToday" style="
+                    background: #1a1a2e;
+                    color: #fff;
+                    border-radius: 6px;
+                    font-weight: 500;
+                  ">
+                Today
+              </button>
+              <button class="btn btn-sm w-100" id="btnFilterPickDate" style="
+                    background: #fff;
+                    color: #1a1a2e;
+                    border: 1px solid #dde3ea;
+                    border-radius: 6px;
+                    font-weight: 500;
+                  ">
+                <i class="bi bi-calendar3 me-1"></i> Set Date
+              </button>
+            </div>
+            <input id="datePicker" class="d-none" />
+          </div>
+
+          <!-- Filter Button with Dropdown -->
+          <div class="position-relative">
+            <button class="evl-btn" id="btnFilter" title="Filter Lines">
+              <i class="bi bi-funnel me-1"></i>
+              <span class="d-none d-sm-inline">Filter</span>
+            </button>
+            <div id="filterDropdown" class="evl-dropdown d-none" style="min-width: 180px">
+              <div class="d-flex flex-column gap-1">
+                <button class="evl-filter-opt active" data-line="-1">
+                  All
+                </button>
+                <button class="evl-filter-opt" data-line="0" style="color: #e53935">
+                  RS485_1
+                </button>
+                <button class="evl-filter-opt" data-line="1" style="color: #ffb300">
+                  RS485_2
+                </button>
+                <button class="evl-filter-opt" data-line="2" style="color: #1e88e5">
+                  RS232_1
+                </button>
+                <button class="evl-filter-opt" data-line="3" style="color: #212121">
+                  RS232_2
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Date Range Badge -->
+      <div id="dateRangeBadge" class="mb-2 d-none">
+        <span id="dateRangeText" class="d-none"></span>
+        <button type="button" id="clearDate" class="d-none"></button>
+      </div>
+
+      <!-- Chart Canvas -->
+      <div class="evl-chart-wrapper">
+        <canvas id="tempChart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const SELECTED_DEVICE = "{{ device }}";
+  </script>
+  <script src="../static/js/app.js"></script>
+  <script src="../static/js/app.js"></script>
+</body>
+
+</html>

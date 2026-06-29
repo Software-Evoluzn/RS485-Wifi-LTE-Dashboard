@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="icon" type="image/png" href="../static/img/evoluzn_title_logo.png">
+    <link rel="stylesheet" href="../static/css/bootstrap.css">
+    <link rel="stylesheet" href="../static/css/login.css">
+
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 25px;
+            width: 400px;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            margin-top: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            height: 50px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .sensor-select {
+            display: flex;
+            gap: 10px;
+        }
+
+        .add-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .sensor-list {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sensor-tag {
+            background: #e3f2fd;
+            border-radius: 20px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .sensor-tag button {
+            background: none;
+            border: none;
+            color: red;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .save-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+
+        .cancel-btn {
+            background: #ccc;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login_container">
+
+        <div class="login_left_panel">
+            <img class="login_evoluzn_logo_img" src="../static/img/evoluznlogo_white.png" alt="">
+            <div class="login_toggle_buttons">
+                <button id="loginBtn" class="active" onclick="showLogin()">Login</button>
+                <button id="registerBtn" onclick="showRegister()">Register</button>
+            </div>
+        </div>
+        <!-- ******************** -->
+        <div class="login_right_panel" id="login_rightPanel">
+
+            <div class="login_form_box">
+
+                <div class="login_form_container" id="loginForm">
+                    <h2>WELCOME BACK 👋</h2>
+
+                    <form id="loginFormElem" method="POST">
+
+                        <div class="mt-4 text-start">
+                            <label class="form-label mb-0">Email</label>
+                            <input type="text" id="login_email" name="email" class="form-control mt-1"
+                                placeholder="Enter email">
+                            <span id="login_emailError" class="error"></span>
+                        </div>
+
+                        <div class="position-relative mt-3">
+                            <label class="form-label  mb-0">Password</label>
+                            <input type="password" id="login_password" name="password" class="form-control pe-5  mt-1"
+                                placeholder="Enter password">
+                            <span class="position-absolute end-0 translate-middle-y me-3 toggle_eye"
+                                id="togglePassword">
+                                <img class="login_eye_open_img" src="../static/img/eye_open.svg" alt="Not shown">
+                            </span>
+                        </div>
+
+                        <span id="login_passwordError" class="error"></span>
+
+                        <div class="d-flex justify-content-center">
+                            <button type="submit" class="btn border border-dark">Sign in</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="login_form_container hidden bg-white" id="registerForm">
+                    <h2>CREATE ACCOUNT</h2>
+
+                    <form id="registerFormElem">
+
+                        <div class="register">
+
+                            <div class="login_input_div text-start">
+                                <label class="form-label mb-0">Full Name</label>
+                                <input type="text" id="company_name" name="company_name" class="form-control mt-1" placeholder="Full Name">
+                            </div>
+
+                            <div class="login_input_div text-start mt-1">
+                                <label class="form-label mb-0">Email</label>
+                                <input type="text" id="register_email" name="register_email" class="form-control mt-1" placeholder="Enter email">
+                            </div>
+
+                            <div class="login_input_div position-relative mt-1">
+                                <label class="form-label mb-0">Password</label>
+                                <input type="password" id="register_password" name="register_password" class="form-control mt-1"
+                                    placeholder="Enter password">
+                            </div>
+
+                        </div>
+
+                        <input type="hidden" name="rtu_no" id="rtuHidden">
+                        <input type="hidden" name="temperature" id="tempHidden">
+                        <input type="hidden" name="voltage" id="voltHidden">
+                        <input type="hidden" name="current" id="currHidden">
+                        <input type="hidden" name="power" id="powerHidden">
+
+                        <div class="d-flex justify-content-center gap-4 mt-3">
+                            
+                            <button type="submit" class="btn border border-dark">
+                                Register
+                            </button>
+                        </div>
+
+                    </form>
+
+                    <div id="configureModal" class="modal">
+
+                        <div class="modal-content">
+
+                            <h3>Configure RTU Device</h3>
+
+                            <div class="form-group">
+                                <label>RTU ID</label>
+                                <input type="text" id="rtuInput" placeholder="Enter RTU ID">
+                            </div>
+
+                            <div class="form-group">
+
+                                <label>Select Sensors</label>
+
+                                <div class="sensor-select">
+                                    <select id="sensorDropdown">
+                                        <option value="">Select Sensor</option>
+                                        <option value="Temperature">TEMPERATURE</option>
+                                        <option value="Voltage">VOLTAGE</option>
+                                        <option value="Current">CURRENT</option>
+                                        <option value="Power">POWER</option>
+                                    </select>
+
+                                    <div class="add-btn" onclick="addSensor()">Add</div>
+                                </div>
+
+                                <div id="sensorList" class="sensor-list"></div>
+
+                            </div>
+
+                            <div class="modal-actions">
+                                <button class="save-btn" onclick="saveConfig()">Save</button>
+                                <button class="cancel-btn" onclick="closeConfigureModal()">Cancel</button>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <!-- ******************** -->
+
+    <!-- pls inset footer backend-->
+    <footer class="py-2">
+        <div> Powered By <span>EVOLUZN</span></div>
+    </footer>
+    <!-- pls inset footer backend-->
+
+    <script>
+        
+        let sensors = [];
+        
+        function openConfigureModal() {
+            document.getElementById("configureModal").style.display = "flex";
+        }
+        
+        function closeConfigureModal() {
+            document.getElementById("configureModal").style.display = "none";
+        }
+
+        function addSensor() {
+            let dropdown = document.getElementById("sensorDropdown");
+            let sensor = dropdown.value;
+            if (sensor == "") return;
+            if (sensors.includes(sensor)) {
+                alert("Sensor already added");
+                return;
+            }
+            sensors.push(sensor);
+            renderSensors();
+            dropdown.value = "";
+        }
+        
+        function removeSensor(sensor) {
+            sensors = sensors.filter(s => s !== sensor);
+            renderSensors();
+        }
+        
+        function renderSensors() {
+            let list = document.getElementById("sensorList");
+            list.innerHTML = "";
+            sensors.forEach(sensor => {
+                let tag = document.createElement("div");
+                tag.className = "sensor-tag";
+                tag.innerHTML = `
+                ${sensor}
+                <button onclick="removeSensor('${sensor}')">✖</button>
+                `;
+                list.appendChild(tag);
+            });
+        }
+        
+        function saveConfig() {
+            let rtu = document.getElementById("rtuInput").value;
+            document.getElementById("rtuHidden").value = rtu;
+            let temp = sensors.includes("Temperature") ? 1 : 0;
+            let volt = sensors.includes("Voltage") ? 1 : 0;
+            let curr = sensors.includes("Current") ? 1 : 0;
+            let power = sensors.includes("Power") ? 1 : 0;
+            document.getElementById("tempHidden").value = temp;
+            document.getElementById("voltHidden").value = volt;
+            document.getElementById("currHidden").value = curr;
+            document.getElementById("powerHidden").value = power;
+            closeConfigureModal();
+        }
+
+    </script>
+<script src="../static/js/login.js"></script>
+</body>
+
+</html>
